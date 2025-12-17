@@ -10,11 +10,6 @@ import SwiftUI
 struct AddItemView: View {
     var item: TodoItem?
     @ObservedObject var viewModel = TodoViewModel()
-    @State private var title: String = ""
-    @State private var infoText: String = ""
-    @State private var selectedCategory: TodoCategory = .personal
-    @State private var dueDate: Date = Date()
-    @State private var priority: TodoPriority = .medium
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -24,7 +19,7 @@ struct AddItemView: View {
                     .font(.title)
                     .fontWeight(.bold)
                 
-                TextField("Plan title", text: $title)
+                TextField("Plan title", text: $viewModel.title)
                     .padding()
                     .background(Color(uiColor: .systemBackground))
                     .cornerRadius(20)
@@ -43,11 +38,11 @@ struct AddItemView: View {
                         Text("Due Date")
                         Spacer()
                         
-                        DatePicker("", selection: $dueDate, displayedComponents: .date)
+                        DatePicker("", selection: $viewModel.dueDate, displayedComponents: .date)
                             .labelsHidden()
                         
                     }
-            
+                    
                     .frame(height: 40)
                     
                     HStack{
@@ -59,7 +54,7 @@ struct AddItemView: View {
                         Text("Due Time")
                         Spacer()
                         
-                        DatePicker("", selection: $dueDate, displayedComponents: .hourAndMinute)
+                        DatePicker("", selection: $viewModel.dueDate, displayedComponents: .hourAndMinute)
                             .labelsHidden()
                         
                     }
@@ -83,17 +78,17 @@ struct AddItemView: View {
                                 .font(.subheadline)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 30)
-                                .opacity(priority == prio ? 1.0 : 0.6)
+                                .opacity(viewModel.priority == prio ? 1.0 : 0.6)
                                 .onTapGesture{
                                     withAnimation {
-                                        priority = prio
+                                        viewModel.priority = prio
                                     }
                                 }
                                 .background{
-                                    if priority == prio {
+                                    if viewModel.priority == prio {
                                         RoundedRectangle(cornerRadius: 15)
-                                            .foregroundStyle(priority.color.opacity(0.7))
-                                            .animation(.bouncy, value: priority)
+                                            .foregroundStyle(viewModel.priority.color.opacity(0.7))
+                                            .animation(.bouncy, value: viewModel.priority)
                                     }
                                 }
                             
@@ -121,9 +116,9 @@ struct AddItemView: View {
                         VStack{
                             Image(systemName: category.imageName)
                                 .imageScale(.large)
-                                .foregroundStyle(selectedCategory == category ? .white : .gray)
+                                .foregroundStyle(viewModel.selectedCategory == category ? .white : .gray)
                                 .frame(width: 60, height: 60)
-                                .background(selectedCategory == category ?  selectedCategory.color : .white)
+                                .background(viewModel.selectedCategory == category ?  viewModel.selectedCategory.color : .white)
                                 .cornerRadius(20)
                             
                             Text(String(describing: category).capitalized)
@@ -132,20 +127,20 @@ struct AddItemView: View {
                         .frame(maxWidth: .infinity)
                         .onTapGesture{
                             withAnimation {
-                                selectedCategory = category
+                                viewModel.selectedCategory = category
                             }
                         }
                     }
                 }
                 
                 
-                TextEditor(text: $infoText)
+                TextEditor(text: $viewModel.infoText)
                     .frame(height: 150)
                     .padding()
                     .background(Color(uiColor: .systemBackground))
                     .cornerRadius(20)
                     .overlay(alignment: .topLeading, content: {
-                        if infoText.isEmpty {
+                        if viewModel.infoText.isEmpty {
                             Text("Additional information?")
                                 .foregroundColor(.gray)
                                 .padding(.horizontal, 20)
@@ -155,28 +150,18 @@ struct AddItemView: View {
                     }
                              
                     )
-
+                
             }
             .padding()
             .onAppear{
-                if let item = item {
-                    title = item.title
-                    infoText = item.notes ?? ""
-                    selectedCategory = TodoCategory(rawValue: item.category) ?? .personal
-                    priority = TodoPriority(rawValue: item.priority) ?? .medium
-                    dueDate = item.dueDate ?? Date()
-                }
+                viewModel.viewAppear(item: item)
             }
         }
         .background(Color(uiColor: .systemGray6))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    if let item = item {
-                        viewModel.update(item, title: title, notes: infoText, dueDate: dueDate,category: selectedCategory, priority: priority)
-                    }else{
-                        viewModel.add(title: title, notes: infoText, dueDate: dueDate, category: selectedCategory, priority: priority)
-                    }
+                    viewModel.pressToButton(item: item)
                     dismiss()
                 } label: {
                     Text(item == nil ? "Add Item" : "Update Item")
@@ -184,7 +169,7 @@ struct AddItemView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.blue)
                 .clipShape(.capsule)
-                .disabled(title.isEmpty)
+                .disabled(viewModel.title.isEmpty)
             }
         }
     }
